@@ -1,0 +1,4 @@
+Building DAG of jobs...
+MissingInputException in line 9 of /home/dcmorgan/snakemake_viral_calling/snakeFile:
+Missing input files for rule helloSingularity:
+inputs/run_prodigal.sh

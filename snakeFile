@@ -1,0 +1,19 @@
+onstart:
+    print("##### TEST #####\n") 
+    print("\t Creating jobs output subfolders...\n")
+    shell("mkdir -p jobs/helloSingularity")
+FILESNAMES=["run_assemble.sh", "run_mpa.sh", "run_dvf.sh", "run_prodigal.py", "run_blastp.sh", "filter_blast.py", "run_bbmap.sh", "plot_abundance.py"]
+rule all:
+    input:
+        expand("results/{recipient}", recipient=FILESNAMES)
+rule helloSingularity:
+    input:
+        "inputs/{recipient}"
+    output:
+        "results/{recipient}"
+    threads: 1
+    singularity: "singularities/viral_calling.sif"
+    shell:
+        """
+        cat {input} > {output}
+        """        
