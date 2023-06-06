@@ -2,27 +2,33 @@
 snakefile: snakeFile
 latency-wait: 60
 reason: True
+samples:
+    A: /groups/cgsd/shengxu/CRC_data/no_duplicated/*good_out_R1*.fastq
+    B: /groups/cgsd/shengxu/CRC_data/no_duplicated/*good_out_R2*.fastq
+
 # show-failed-logs: True
 keep-going: True
 printshellcmds: True
 # Cluster submission
+# queue: cgsd
 jobname: "{rule}.{jobid}"              # Provide a custom name for the jobscript that is submitted to the cluster.
-max-jobs-per-second: 1                 #Maximal number of cluster/drmaa jobs per second, default is 10, fractions allowed.
-max-status-checks-per-second: 10       #Maximal number of job status checks per second, default is 10
-jobs: 400                              #Use at most N CPU cluster/cloud jobs in parallel.
-cluster: "sbatch --output=\"jobs/{rule}/slurm_%x_%j.out\" --error=\"jobs/{rule}/slurm_%x_%j.log\" --mem={resources.mem_mb} --time={resources.runtime} --parsable"
+# max-jobs-per-second: 1                 #Maximal number of cluster/drmaa jobs per second, default is 10, fractions allowed.
+# max-status-checks-per-second: 10       #Maximal number of job status checks per second, default is 10
+jobs: 4                                #Use at most N CPU cluster/cloud jobs in parallel.
+cluster: "qsub -q cgsd --output=\"jobs/{rule}/slurm_%x_%j.out\" --error=\"jobs/{rule}/slurm_%x_%j.log\" --mem={resources.mem_mb} --time={resources.runtime}" # --parsable"
 cluster-status: "./profile/status-sacct.sh" #  Use to handle timeout exception, do not forget to chmod +x
 # singularity
 use-singularity: True
 singularity-args: "--bind ~/snakemake_viral_calling/"
+cluster-config: "profile/cluster.json"
 # # Job resources
 # set-resources:
 #   - helloSingularity:mem_mb=1000
 #   - helloSingularity:runtime=00:03:00
 # # For some reasons time needs quotes to be read by snakemake
-# default-resources:
+# resources:
 #   - mem_mb=500
 #   - runtime="00:01:00"
 # # Define the number of threads used by rules
 # set-threads:
-#   - helloSingularity=1
+  # - helloSingularity=1

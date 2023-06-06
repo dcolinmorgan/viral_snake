@@ -1,19 +1,306 @@
 onstart:
     print("##### TEST #####\n") 
     print("\t Creating jobs output subfolders...\n")
-    shell("mkdir -p jobs/helloSingularity")
-FILESNAMES=["run_assemble.sh", "run_mpa.sh", "run_dvf.sh", "run_prodigal.py", "run_blastp.sh", "filter_blast.py", "run_bbmap.sh", "plot_abundance.py"]
+    shell("mkdir -p jobs/viral_calling")
+
+configfile: "profile/config.yaml"
+
+samples:
+    A: /groups/cgsd/shengxu/CRC_data/no_duplicated/*good_out_R1*.fastq
+    B: /groups/cgsd/shengxu/CRC_data/no_duplicated/*good_out_R2*.fastq
+
 rule all:
     input:
-        expand("results/{recipient}", recipient=FILESNAMES)
-rule helloSingularity:
+        ""
+def get_input_fastqs(wildcards):
+    return config["samples"][wildcards.sample]
+
+rule run_assemble_and_mpa:
     input:
-        "inputs/{recipient}"
+        # "data/genome.fa", ## file 
+        get_input_fastqs ## function
     output:
-        "results/{recipient}"
-    threads: 1
+        A: protected("~/assemble/{sample}.fa")
+        B: protected("~/m_out/{sample}.txt")
+        C: temp("~/epi_metaphlan_out/{sample}.bowtie2.bz2")
+        D: temp("~/epi_sam_out/{sample}.sam")
+
+    # params:
+    #     rg=r"@RG\tID:{sample}\tSM:{sample}"
+    log:
+        "logs/{sample}.log"
+    threads: 8
+    singularity: "singularities/viral_calling.sif"
+
+    shell:
+        "megahit -1 clean_data/{input.A} -2 clean_data/{input.B} -t {threads} -o {output.A}"
+        "metaphlan no_duplicated/{input.A},no_duplicated/{input.B} --bowtie2out {output.C} --nproc {threads} --input_type fastq -o {output.B} -t rel_ab_w_read_stats -s {output.D}"
+
+
+rule run_dvf:
+    input:
+        "~/assemble/{sample}.fa"
+    output:
+        protected("~/dvf_out/{sample}.txt")
+    log:
+        "logs/{sample}.log"
+    singularity: "singularities/viral_calling.sif"
+    params:
+        rg=r"@RG\tLEN:{500}"
+    threads: 12
+    shell:
+        "python ~/DeepVirFinder/dvf.py -i {input} -l '{params.rg}' -c {threads}"
+
+
+
+rule run_prodigal:
+    input:
+        "~/assemble/{sample}/final.contigs.fa_gt{params}bp_dvfpred.txt"
+    output:
+        protected()"~/assemble/{sample}/final_contigs.fna")
+    log:
+        "logs/{sample}.log"
+    params:
+        rg=r"@RG\tLEN:{500}"
+    singularity: "singularities/viral_calling.sif"
+    run:
+        for i in glob.glob(input):
+            os.chdir(i)
+            import pandas as pd
+            import glob,os
+            import subprocess
+            try:
+                A=pd.read_csv(input,sep='\t')
+                vir_pred=A[A.pvalue<.05].name.str.split(' ').str[0]
+                subprocess.Popen("paste -d ',' - - < final.contigs.fa >final_contigs.fa", shell=True).communicate()
+                cont=pd.read_csv(output,sep=',',header=None)
+                contA=cont[0].str.split(' ').str[0].str.split('>').str[1]
+                AA=set(contA) & set(vir_pred)
+                cont['contA']=contA
+                contB=cont[cont.contA.isin(vir_pred)]
+                del contB['contA']
+                contB.to_csv(output,sep='\n',header=False,index=False)
+                subprocess.Popen("prodigal -i final_contigs.fna  -o prod.genes -a prod.prots", shell=True).communicate()
+                print("ran: "+i)
+            except:
+                print("didn't run: "+i)
+            os.chdir('~/')
+
+
+rule run_blastp:
+    input: 
+        A: "~/assemble/{sample}/final_contigs.fna"
+        B: "/groups/cgsd/dcmorgan/virusdb/refseq_viral_db"
+    output:
+        protected("~/assemble/{sample}/viral_hits.blast")
+    log:
+        "logs/{sample}.log"
     singularity: "singularities/viral_calling.sif"
     shell:
-        """
-        cat {input} > {output}
-        """        
+        blastp -query {input.A} -db {input.B} -out {output} -outfmt 6
+  
+
+rule filter_blast:
+    input:
+        "~/assemble/{sample}/final_contigs.fa"
+        
+    output:
+        temp("~/assemble/{sample}/blast_contigs.fa")
+    log:
+        "logs/{sample}.log"
+    singularity: "singularities/viral_calling.sif"
+    run:
+        reads=pd.read_csv(input,names=['name','seq'])
+        hits=pd.read_csv('viral_hits.blast',sep='\t',names=['name','tmp','identity','tmp1','tmp2','tmp3','tmp4','tmp5','tmp8','tmp12','tmp13','tmp11'])
+        hits=hits[['name','identity']]
+        AA=set(reads.name.str.split(' ').str[0]) & set('>'+hits.name.str.split('_').str[0]+'_'+hits.name.str.split('_').str[1])
+        reads[reads['name'].str.split(' ').str[0].isin(AA)].to_csv('blast_contigs.fa',header=False,index=False)
+
+rule run_bbmap:
+    input:
+        "assemble/{sample}/blast_contigs.fa"
+        get_input_fastqs
+    output:
+        A: temp(assemble/{sample}/blast_contigs.faa)
+        B: temp(assemble/{sample}/build_v)
+        C: protected(assemble/{sample}/eg2.sam)
+        D: temp(assemble/{sample}/aln.bam)
+        E: temp(assemble/{sample}/sorted_aln.bam)
+        F: protected(temp(assemble/{sample}/idxstats.txt)
+    singularity: "singularities/viral_calling.sif"
+    shell:
+        tr ',' '\n' < {input} > {output.A}
+        bowtie2-build {output.A} {output.B}
+        bowtie2 -x {output.B} -1 {input.A} -2 {input.B} -S {output.C}
+        samtools view -bS {output.C} > {output.D}
+        samtools sort {output.D} -o {output.E}
+        samtools idxstats {output.E} > {output.F}
+
+def get_count_table(wildcards):
+    import sys,glob
+    flag = 0
+    ids = []
+    length = []
+    count = []
+    fname = []
+    R=glob.glob('assemble/*.idxstats.txt')
+    for f in R:
+        fname.append(f)
+        co = []
+        for n,line in enumerate(open(f)):
+            #print line
+            if(line[:1] == '*'):
+                continue
+            spl = line.strip().split('\t')
+            # print spl[0]
+            if(flag == 0):
+                ids.append(spl[0])
+                length.append(spl[1])
+            su = int(spl[2])+int(spl[3])
+            co.append(str(su))
+        count.append(co)
+        co = []
+        flag = 1
+    names = '\t'.join(fname)
+    print '\t'.join(['contig','length',names])
+
+    for i in range(0,len(ids)):
+        tco = []
+        for j in range(0,len(count)):
+            tco.append(count[j][i])
+        result =[ids[i],length[i],'\t'.join(tco)]
+        print '\t'.join(result)
+
+
+rule get_count_table:
+    input:
+        "assemble/{sample}/idxstats.txt"
+    output:
+        A: temp("assemble/{sample}.idxstats.txt")
+        B: protected("assemble/contig_counts.tsv")
+    shell:
+        "for subdir in *; do cp {input} {output.A}; done;"
+        "find . -size 0 -delete"
+        "python2 get_count_table {output.A} > {output.B}"
+
+rule plot_abundance:
+    input:
+        "assemble/contig_counts.tsv"
+    output:
+        A: protected("assemble/{sample}/box_plot.png")
+        B: protected("assemble/{sample}/abundance_plot.png")
+        C: protected("assemble/{sample}/eco_plot.png")
+
+    run:
+
+        import seaborn as sns, numpy as np, pandas as pd
+        from numpy import inf
+
+        def plot_violin_and_box():
+            data=pd.read_csv('assemble/contig_counts.tsv',sep='\t')
+            data=data.drop(columns='length').melt(['contig']).replace({'-DNA.idxstats.txt':' '}, regex=True)
+
+            plt.figure(figsize=(8,12))
+            data['log_value']=np.log10(data.value)
+            data['log_value'][np.isneginf(data['log_value'])] = 0
+            data['log_abundance']=data['log_value'].fillna(0)
+            tmp=sns.violinplot(data=data, y="variable", x="log_abundance",scale="count")
+
+            plt.figure(figsize=(8,12))
+            tmp=sns.boxplot(data=data, y="variable", x="log_abundance",hue='label',dodge=False)
+            
+            data['over_fifty'] = np.where( data.age > 50, 1, 0)
+            plt.figure(figsize=(8,12))
+            tmp=sns.boxplot(data=data, y="variable", x="log_abundance",hue='over_fifty',dodge=False)
+            tmp.savefig('box_plot.png')
+
+        def abundance_plot():
+
+
+            data=pd.read_csv('assemble/contig_counts.tsv',sep='\t')
+            data=data.drop(columns='length').melt(['contig']).replace({'-DNA.idxstats.txt':' '}, regex=True)
+            data.variable.replace(' ','',regex=True,inplace=True)
+            label=pd.read_csv('assemble/label.txt',sep='\t')
+            data=pd.merge(data,label,left_on='variable',right_on='id')
+            species=pd.read_csv('assemble/dvf_species.txt',sep='\t',names=['contig','species'])
+            data=pd.merge(data,species,how='left')
+            data=data.fillna('unknown')
+            data=data[data.value!=0]
+
+            plt.figure(figsize=(8,12))
+            data['log_abundance']=np.log10(data.value)
+            data['log_abundance'][np.isneginf(data['log_abundance'])] = 0
+            data['log_abundance']=data['log_abundance'].fillna(0)
+            data['genus']=data.species.str.split(' ').str[0]
+            
+            data1=data[data.label=='Non-refractory']
+            sub_gen=data1.groupby('genus').count().sort_values('contig',ascending=False).reset_index().genus[1:20]
+            data1=data1[data1['genus'].isin(sub_gen)]
+            
+            plt.figure(figsize=(12,8))
+            ax = sns.histplot(data1, x='variable', hue='genus', weights='log_abundance',
+                        multiple='stack', palette='tab20c', shrink=0.8)
+            ax.set_ylabel('log_abundance')
+            ax.set_xlabel('non-refractory')
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=45, horizontalalignment='right')
+
+            # Fix the legend so it's not on top of the bars.
+            legend = ax.get_legend()
+            legend.set_bbox_to_anchor((1, 1))
+
+            data2=data[data.label=='Refractory']
+            sub_gen=data2.groupby('genus').count().sort_values('contig',ascending=False).reset_index().genus[1:20]
+            data2=data2[data2['genus'].isin(sub_gen)]
+
+            plt.figure(figsize=(12,8))
+            ax = sns.histplot(data2, x='variable', hue='genus', weights='log_abundance',
+                        multiple='stack', palette='tab20c', shrink=0.8)
+            ax.set_ylabel('log_abundance')
+            ax.set_xlabel('refractory')
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=45, horizontalalignment='right')
+
+            # Fix the legend so it's not on top of the bars.
+            legend = ax.get_legend()
+            legend.set_bbox_to_anchor((1, 1))
+            plt.savefig('abundance_plot.png')
+
+        def plot_index():
+            import ecopy
+            data=pd.read_csv('assemble/contig_counts.tsv',sep='\t',index_col=0)
+            data=data.drop(columns='length')#.replace({'-DNA.idxstats.txt':' '}, regex=True)
+            data.columns=data.columns.str.replace('-DNA.idxstats.txt','',regex=True)
+            data=data.T
+            label=pd.read_csv('assemble/label.txt',sep='\t')
+            data=pd.merge(data,label,left_index=True,right_on='id')
+            data.index=data.label
+            data=data.drop(columns={'id','sex','age','label'})
+            A=ecopy.diversity(data, method='shannon')
+            C=ecopy.diversity(data, method='simpson',breakNA=True)
+            A=pd.DataFrame(A)
+            A.index=data.index
+            A.rename(columns={0:'Shannon_Index'},inplace=True)
+
+            from statannot import add_stat_annotation
+
+            ax=sns.boxplot(data=A,y=A.Shannon_Index,x=A.index)
+            add_stat_annotation(ax, data=A,y=A.Shannon_Index,x=A.index,
+                                box_pairs=[("Refractory", "Non-refractory")],# ("Thur", "Sat"), ("Fri", "Sun")],
+                                test='t-test_ind', text_format='star', loc='outside', verbose=2)
+
+
+            C=pd.DataFrame(C)
+            C.index=data.index
+            C.rename(columns={0:'Simpson_Index'},inplace=True)
+
+            from statannot import add_stat_annotation
+            C=C.replace(inf,0)
+            ax=sns.boxplot(data=C,y=C.Simpson_Index,x=C.index)
+            add_stat_annotation(ax, data=C,y=C.Simpson_Index,x=C.index,
+                                box_pairs=[("Refractory", "Non-refractory")],# ("Thur", "Sat"), ("Fri", "Sun")],
+                                test='t-test_ind', text_format='star', loc='outside', verbose=2)
+            ax.savefig('eco_plot.png')
+    
+    
+### ml snakemake
+### cd snakemake_viral_calling/ 
+### snakemake --profile profile/ --use-singularity
