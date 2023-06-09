@@ -2,9 +2,9 @@
 snakefile: snakeFile
 latency-wait: 60
 reason: True
-samples:
-    A: /groups/cgsd/shengxu/CRC_data/no_duplicated/*good_out_R1*.fastq
-    B: /groups/cgsd/shengxu/CRC_data/no_duplicated/*good_out_R2*.fastq
+# samples:
+#     A: /groups/cgsd/dcmorgan/PRJNA544527/ftp/SRR922*_1.fastq.gz
+#     B: /groups/cgsd/dcmorgan/PRJNA544527/ftp/SRR922*_2.fastq.gz
 
 # show-failed-logs: True
 keep-going: True
