@@ -5,44 +5,63 @@ onstart:
 
 configfile: "profile/config.yaml"
 SAMPLES, = glob_wildcards("/groups/cgsd/dcmorgan/PRJNA544527/ftp/{sample}_1.fastq.gz")
+# SAMPLES, = glob_wildcards("/groups/cgsd/shengxu/epilepsy/LauG_Metagenomics_CPOS-221215-MHWK-15822a/LauG_Metagenomics_CPOS-221215-MHWK-15822a/clean_data/{sample}_1.fastq.gz")
 
-rule all:
-    input:
-        expand("{sample}_{num}.fastq.gz", sample=SAMPLES, num=['1', '2'])
-    output:
+# FILESNAMES=["hello", "helloBis"]
+# rule all:
+#     input:
+#         expand("results/{recipient}-sing.txt", recipient=FILESNAMES)
+# rule helloSingularity:
+#     input:
+#         "inputs/{recipient}.txt"
+#     output:
+#         "results/{recipient}-sing.txt"
+#     threads: 1
+#     shell:
+#         """
+#         cat {input} > {output}
+        # """  
         
-        
-# def get_input_fastqs(wildcards):
-    # return config["samples"][wildcards.sample]
+# rule all:
+#     input:
+#         expand("{sample}_{num}.fastq.gz", sample=SAMPLES, num=['1', '2'])
 
 rule run_assemble_and_mpa:
     input:
-        # "data/genome.fa", ## file 
-        # get_input_fastqs ## function
-        "{sample}"
+        # "{sample}"
+        expand("/groups/cgsd/dcmorgan/PRJNA544527/ftp/{sample}_{num}.fastq.gz", sample=SAMPLES, num=['1', '2'])
     output:
-        A= protected("~/assemble/{sample}.fa"),
-        B= protected("~/m_out/{sample}.txt"),
-        C= temp("~/epi_metaphlan_out/{sample}.bowtie2.bz2"),
-        D= temp("~/epi_sam_out/{sample}.sam")
+        # b=protected("jobs/viral_calling/assemble"),
+        # b=protected("jobs/viral_calling/m_out"),
+        # c=protected("jobs/viral_calling/epi_metaphlan_out"),
+        # d=protected("jobs/viral_calling/epi_sam_out"),
+        A= protected("jobs/viral_calling/assemble/{sample}.fa"),
+        # B= protected("jobs/viral_calling/m_out/{sample}.txt"),
+        # C= temp("jobs/viral_calling/epi_metaphlan_out/{sample}.bowtie2.bz2"),
+        # D= temp("jobs/viral_calling/epi_sam_out/{sample}.sam")
 
     # params:
     #     rg=r"@RG\tID:{sample}\tSM:{sample}"
-    log:
-        "logs/{sample}.log"
+    # log:
+    #     "logs/{sample}.log"
     threads: 8
     singularity: "singularities/viral_calling.sif"
 
     shell:
-        "megahit -1 clean_data/{input.A} -2 clean_data/{input.B} -t {threads} -o {output.A}"
-        "metaphlan no_duplicated/{input.A},no_duplicated/{input.B} --bowtie2out {output.C} --nproc {threads} --input_type fastq -o {output.B} -t rel_ab_w_read_stats -s {output.D}"
+        # "mkdir {output.b}"
+        # "mkdir {output.b}"
+        # "mkdir {output.c}"
+        # "mkdir {output.d}"
+        # "cat {input} > {output.A}"
+        """megahit -1 {input.A} -2 {input.B} -t {threads} -o {output.A} && \
+           metaphlan {input.A},{input.B} --bowtie2out {output.C} --nproc {threads} --input_type fastq -o {output.B} -t rel_ab_w_read_stats -s {output.D}"""
 
 
 rule run_dvf:
     input:
-        "~/assemble/{sample}.fa"
+        "jobs/viral_calling/assemble/{sample}.fa"
     output:
-        protected("~/dvf_out/{sample}.txt")
+        protected("jobs/viral_calling/dvf_out/{sample}.txt")
     log:
         "logs/{sample}.log"
     singularity: "singularities/viral_calling.sif"
@@ -50,15 +69,15 @@ rule run_dvf:
         rg=r"@RG\tLEN:{500}"
     threads: 12
     shell:
-        "python ~/DeepVirFinder/dvf.py -i {input} -l '{params.rg}' -c {threads}"
+        "python jobs/viral_calling/DeepVirFinder/dvf.py -i {input} -l '{params.rg}' -c {threads}"
 
 
 
 rule run_prodigal:
     input:
-        "~/assemble/{sample}/final.contigs.fa_gt{params}bp_dvfpred.txt"
+        "jobs/viral_calling/assemble/{sample}/final.contigs.fa_gt{params}bp_dvfpred.txt"
     output:
-        protected("~/assemble/{sample}/final_contigs.fna")
+        protected("jobs/viral_calling/assemble/{sample}/final_contigs.fna")
     log:
         "logs/{sample}.log"
     params:
@@ -70,10 +89,10 @@ rule run_prodigal:
 
 rule run_blastp:
     input: 
-        A= "~/assemble/{sample}/final_contigs.fna",
+        A= "jobs/viral_calling/assemble/{sample}/final_contigs.fna",
         B= "/groups/cgsd/dcmorgan/virusdb/refseq_viral_db"
     output:
-        protected("~/assemble/{sample}/viral_hits.blast")
+        protected("jobs/viral_calling/assemble/{sample}/viral_hits.blast")
     log:
         "logs/{sample}.log"
     singularity: "singularities/viral_calling.sif"
@@ -83,9 +102,9 @@ rule run_blastp:
 
 rule filter_blast:
     input:
-        "~/assemble/{sample}/final_contigs.fa"
+        "jobs/viral_calling/assemble/{sample}/final_contigs.fa"
     output:
-        temp("~/assemble/{sample}/blast_contigs.fa")
+        temp("jobs/viral_calling/assemble/{sample}/blast_contigs.fa")
     log:
         "logs/{sample}.log"
     singularity: "singularities/viral_calling.sif"
@@ -95,7 +114,7 @@ rule filter_blast:
 
 rule run_bbmap:
     input:
-        "~/assemble/{sample}/blast_contigs.fa"
+        "jobs/viral_calling/assemble/{sample}/blast_contigs.fa"
     output:
         A= temp("assemble/{sample}/blast_contigs.faa"),
         B= temp("assemble/{sample}/build_v"),
@@ -146,4 +165,4 @@ rule get_count_table:
     
 ### ml snakemake
 ### cd snakemake_viral_calling/ 
-### snakemake --profile profile/ --use-singularity
+### snakemake --profile profile/ --use-singularity --cluster qsub --jobs 32
