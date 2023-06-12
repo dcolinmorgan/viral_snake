@@ -1,60 +1,37 @@
-onstart:
+# onstart:
     # print("##### TEST #####\n") 
     # print("\t Creating jobs output subfolders...\n")
-    shell("mkdir -p jobs/viral_calling")
+    # shell("mkdir -p jobs/viral_calling")
 
-configfile: "profile/config.yaml"
-SAMPLES, = glob_wildcards("/groups/cgsd/dcmorgan/PRJNA544527/ftp/{sample}_1.fastq.gz")
-# SAMPLES, = glob_wildcards("/groups/cgsd/shengxu/epilepsy/LauG_Metagenomics_CPOS-221215-MHWK-15822a/LauG_Metagenomics_CPOS-221215-MHWK-15822a/clean_data/{sample}_1.fastq.gz")
+SAMPLES, = glob_wildcards("/groups/cgsd/dcmorgan/PRJNA544527/ftp/test/{sample}_1.fastq.gz")
 
-# FILESNAMES=["hello", "helloBis"]
-# rule all:
-#     input:
-#         expand("results/{recipient}-sing.txt", recipient=FILESNAMES)
-# rule helloSingularity:
-#     input:
-#         "inputs/{recipient}.txt"
-#     output:
-#         "results/{recipient}-sing.txt"
-#     threads: 1
-#     shell:
-#         """
-#         cat {input} > {output}
-        # """  
-        
-# rule all:
-#     input:
-#         expand("{sample}_{num}.fastq.gz", sample=SAMPLES, num=['1', '2'])
+rule all:
+    input:
+        expand("jobs/viral_calling/assemble/{sample}.fa", sample=SAMPLES, allow_missing=True),
+
 
 rule run_assemble_and_mpa:
     input:
         # "{sample}"
-        expand("/groups/cgsd/dcmorgan/PRJNA544527/ftp/{sample}_{num}.fastq.gz", sample=SAMPLES, num=['1', '2'])
+        A= "/groups/cgsd/dcmorgan/PRJNA544527/ftp/test/{sample}_1.fastq.gz",
+        B= "/groups/cgsd/dcmorgan/PRJNA544527/ftp/test/{sample}_2.fastq.gz"
+
     output:
-        # b=protected("jobs/viral_calling/assemble"),
-        # b=protected("jobs/viral_calling/m_out"),
-        # c=protected("jobs/viral_calling/epi_metaphlan_out"),
-        # d=protected("jobs/viral_calling/epi_sam_out"),
         A= protected("jobs/viral_calling/assemble/{sample}.fa"),
-        # B= protected("jobs/viral_calling/m_out/{sample}.txt"),
-        # C= temp("jobs/viral_calling/epi_metaphlan_out/{sample}.bowtie2.bz2"),
-        # D= temp("jobs/viral_calling/epi_sam_out/{sample}.sam")
+        #B= protected("jobs/viral_calling/m_out/{sample}.txt"),
+        #C= temp("jobs/viral_calling/epi_metaphlan_out/{sample}.bowtie2.bz2"),
+        #D= temp("jobs/viral_calling/epi_sam_out/{sample}.sam")
 
     # params:
     #     rg=r"@RG\tID:{sample}\tSM:{sample}"
     # log:
     #     "logs/{sample}.log"
     threads: 8
-    singularity: "singularities/viral_calling.sif"
+    # singularity: "singularities/viral_calling.sif"
 
     shell:
-        # "mkdir {output.b}"
-        # "mkdir {output.b}"
-        # "mkdir {output.c}"
-        # "mkdir {output.d}"
-        # "cat {input} > {output.A}"
-        """megahit -1 {input.A} -2 {input.B} -t {threads} -o {output.A} && \
-           metaphlan {input.A},{input.B} --bowtie2out {output.C} --nproc {threads} --input_type fastq -o {output.B} -t rel_ab_w_read_stats -s {output.D}"""
+        "megahit -1 {input.A} -2 {input.B} -t {threads} -o {output.A}" # && \
+         #  metaphlan {input.A},{input.B} --bowtie2out {output.C} --nproc {threads} --input_type fastq -o {output.B} -t rel_ab_w_read_stats -s {output.D}"""
 
 
 rule run_dvf:

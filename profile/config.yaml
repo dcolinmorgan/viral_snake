@@ -15,8 +15,9 @@ jobname: "{rule}.{jobid}"              # Provide a custom name for the jobscript
 # max-jobs-per-second: 1                 #Maximal number of cluster/drmaa jobs per second, default is 10, fractions allowed.
 # max-status-checks-per-second: 10       #Maximal number of job status checks per second, default is 10
 jobs: 4                                #Use at most N CPU cluster/cloud jobs in parallel.
-cluster: "qsub -q cgsd --output=\"jobs/{rule}/qsub_%x_%j.out\" --error=\"jobs/{rule}/qsub_%x_%j.log\" --mem={resources.mem_mb} --time={resources.runtime}" # --parsable"
-cluster-status: "./profile/status-sacct.sh" #  Use to handle timeout exception, do not forget to chmod +x
+cluster: "qsub -q cgsd -o=\"jobs/{rule}/qsub_%x_%j.out\" -e=\"jobs/{rule}/qsub_%x_%j.log\" -l mem=200gb -l walltime=444:00:00" # --parsable"
+
+# cluster-status: "./profile/status-sacct.sh" #  Use to handle timeout exception, do not forget to chmod +x
 # singularity
 use-singularity: True
 singularity-args: "--bind ~/snakemake_viral_calling/"
@@ -31,4 +32,4 @@ cluster-config: "profile/cluster.json"
 #   - runtime="00:01:00"
 # # Define the number of threads used by rules
 # set-threads:
-  # - helloSingularity=1
+#   - helloSingularity=1

@@ -1,0 +1,4 @@
+channels:
+  - bioconda
+dependencies:
+  - snakemake-minimal=6.15.1
