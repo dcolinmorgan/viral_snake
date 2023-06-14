@@ -1,13 +1,13 @@
-# onstart:
+onstart:
     # print("##### TEST #####\n") 
     # print("\t Creating jobs output subfolders...\n")
-    # shell("mkdir -p jobs/viral_calling")
+    shell("mkdir -p results/assemble/")
 
 SAMPLES, = glob_wildcards("/groups/cgsd/dcmorgan/PRJNA544527/ftp/test/{sample}_1.fastq.gz")
 
 rule all:
     input:
-        expand("jobs/viral_calling/assemble/{sample}.fa", sample=SAMPLES, allow_missing=True),
+        expand("results/assemble/{sample}.fa", sample=SAMPLES, allow_missing=True),
 
 
 rule run_assemble_and_mpa:
@@ -17,81 +17,89 @@ rule run_assemble_and_mpa:
         B= "/groups/cgsd/dcmorgan/PRJNA544527/ftp/test/{sample}_2.fastq.gz"
 
     output:
-        A= protected("jobs/viral_calling/assemble/{sample}.fa"),
-        #B= protected("jobs/viral_calling/m_out/{sample}.txt"),
-        #C= temp("jobs/viral_calling/epi_metaphlan_out/{sample}.bowtie2.bz2"),
-        #D= temp("jobs/viral_calling/epi_sam_out/{sample}.sam")
+        A= protected("results/assemble/{sample}.fa"),
+        B= protected("results/m_out/{sample}.txt"),
+        C= temp("results/epi_metaphlan_out/{sample}.bowtie2.bz2"),
+        D= temp("results/epi_sam_out/{sample}.sam")
 
     # params:
     #     rg=r"@RG\tID:{sample}\tSM:{sample}"
-    # log:
-    #     "logs/{sample}.log"
-    threads: 8
-    # singularity: "singularities/viral_calling.sif"
+    log: out = "logs/{sample}_stdout.log",
+         err = "logs/{sample}_stderr.err"
+
+    threads: 1
+    # singularity: "singularities/viral_NOdvf.sif"
+    conda: "/home/dcmorgan/.conda/envs/mypy3"
 
     shell:
-        "megahit -1 {input.A} -2 {input.B} -t {threads} -o {output.A}" # && \
-         #  metaphlan {input.A},{input.B} --bowtie2out {output.C} --nproc {threads} --input_type fastq -o {output.B} -t rel_ab_w_read_stats -s {output.D}"""
+        """#!/bin/bash \n
+        ml megahit \n
+        megahit -1 {input.A} -2 {input.B} -t {threads} -o {output.A}""" # && \
+        #"""metaphlan {input.A},{input.B} --bowtie2out {output.C} --nproc {threads} --input_type fastq -o {output.B} -t rel_ab_w_read_stats -s {output.D}"""
 
 
 rule run_dvf:
     input:
-        "jobs/viral_calling/assemble/{sample}.fa"
+        "results/assemble/{sample}.fa"
     output:
-        protected("jobs/viral_calling/dvf_out/{sample}.txt")
+        protected("results/dvf_out/{sample}.txt")
     log:
         "logs/{sample}.log"
-    singularity: "singularities/viral_calling.sif"
+    #singularity: "singularities/viral_YESdvf.sif"
+    conda: "/home/dcmorgan/.conda/envs/mypy3/envs/dvf"
     params:
         rg=r"@RG\tLEN:{500}"
     threads: 12
     shell:
-        "python jobs/viral_calling/DeepVirFinder/dvf.py -i {input} -l '{params.rg}' -c {threads}"
+        "python results/DeepVirFinder/dvf.py -i {input} -l '{params.rg}' -c {threads}"
 
 
 
 rule run_prodigal:
     input:
-        "jobs/viral_calling/assemble/{sample}/final.contigs.fa_gt{params}bp_dvfpred.txt"
+        "results/assemble/{sample}/final.contigs.fa_gt{params}bp_dvfpred.txt"
     output:
-        protected("jobs/viral_calling/assemble/{sample}/final_contigs.fna")
+        protected("results/assemble/{sample}/final_contigs.fna")
     log:
         "logs/{sample}.log"
     params:
         rg=r"@RG\tLEN:{500}"
-    singularity: "singularities/viral_calling.sif"
+    # singularity: "singularities/viral_NOdvf.sif"
+    conda: "/home/dcmorgan/.conda/envs/mypy3"
     script:
         "scripts/run_prodigal.py"
 
 
 rule run_blastp:
     input: 
-        A= "jobs/viral_calling/assemble/{sample}/final_contigs.fna",
+        A= "results/assemble/{sample}/final_contigs.fna",
         B= "/groups/cgsd/dcmorgan/virusdb/refseq_viral_db"
     output:
-        protected("jobs/viral_calling/assemble/{sample}/viral_hits.blast")
+        protected("results/assemble/{sample}/viral_hits.blast")
     log:
         "logs/{sample}.log"
-    singularity: "singularities/viral_calling.sif"
+    #singularity: "singularities/viral_NOdvf.sif"
+    conda: "/home/dcmorgan/.conda/envs/mypy3"
     shell:
         "blastp -query {input.A} -db {input.B} -out {output} -outfmt 6"
   
 
 rule filter_blast:
     input:
-        "jobs/viral_calling/assemble/{sample}/final_contigs.fa"
+        "results/assemble/{sample}/final_contigs.fa"
     output:
-        temp("jobs/viral_calling/assemble/{sample}/blast_contigs.fa")
+        temp("results/assemble/{sample}/blast_contigs.fa")
     log:
         "logs/{sample}.log"
-    singularity: "singularities/viral_calling.sif"
+    #singularity: "singularities/viral_NOdvf.sif"
+    conda: "/home/dcmorgan/.conda/envs/mypy3"
     script:
         "scripts/filter_blast.py"
 
 
 rule run_bbmap:
     input:
-        "jobs/viral_calling/assemble/{sample}/blast_contigs.fa"
+        "results/assemble/{sample}/blast_contigs.fa"
     output:
         A= temp("assemble/{sample}/blast_contigs.faa"),
         B= temp("assemble/{sample}/build_v"),
@@ -99,7 +107,8 @@ rule run_bbmap:
         D= temp("assemble/{sample}/aln.bam"),
         E= temp("assemble/{sample}/sorted_aln.bam"),
         F= protected("temp(assemble/{sample}/idxstats.txt")
-    singularity: "singularities/viral_calling.sif"
+    #singularity: "singularities/viral_calling.sif"
+    conda: "/home/dcmorgan/.conda/envs/mypy3"
     shell:
         "tr ',' '\n' < {input} > {output.A}"
         "bowtie2-build {output.A} {output.B}"
@@ -113,6 +122,7 @@ rule get_count_table:
         "assemble/{sample}/idxstats.txt"
     output:
         protected("assemble/contig_counts.tsv")
+    #conda: "/home/dcmorgan/.conda/envs/mypy3"
     run:
         import pandas as pd
         R=glob.glob(input)
@@ -141,5 +151,5 @@ rule get_count_table:
     
     
 ### ml snakemake
-### cd snakemake_viral_calling/ 
-### snakemake --profile profile/ --use-singularity --cluster qsub --jobs 32
+### cd  
+### snakemake --profile profile/ --jobs 1

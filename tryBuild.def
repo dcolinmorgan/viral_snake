@@ -1,0 +1,36 @@
+bootstrap: library
+from: ubuntu
+
+%setup ## singularity build --fakeroot viral_calling.sif tryBuild.def
+   ## singularity build --fakeroot viral_B.sif tryBuild.def
+    mkdir $SINGULARITY_ROOTFS/test
+
+
+%post
+    apt-get -y update && apt-get install -y lsb-release gcc wget git python3-pip curl bzip2 parallel && apt-get clean all
+    lsb_release -a
+    
+    ## attempt conda
+    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+    chmod +x Miniconda3-latest-Linux-x86_64.sh
+    bash Miniconda3-latest-Linux-x86_64.sh -b -f -p /miniconda3/
+    rm Miniconda3-latest-Linux-x86_64.sh
+    export PATH="/miniconda3/bin:$PATH"
+    conda create -n py_rest -c bioconda pandas megahit numpy prodigal bowtie  bbmap
+    
+    ## attempt mamba native
+    # curl micro.mamba.pm/install.sh | bash   
+    # ./bin/micromamba shell init -s bash -p /opt/conda
+    # grep -v '[ -z "\$PS1" ] && return' /root/.bashrc  > /opt/conda/bashrc
+    # eval "$(/root/.local/bin/micromamba shell hook --shell=bash)"
+    # /root/.local/bin/micromamba create -n py36_mamba -y -c conda-forge
+    # /root/.local/bin/micromamba activate py36_mamba
+    # /root/.local/bin/micromamba install -c bioconda python=3.6 numpy theano=1.0.3 keras=2.2.4 scikit-learn Biopython h5py megahit prodigal bowtie bbmap
+
+    NEJ
+    
+   # conda create --name dvf python=3.6 numpy theano=1.0.3 keras=2.2.4 scikit-learn Biopython h5py
+    # source activate dvf
+    
+   pip3 install pandas MetaPhlan
+   # git clone https://github.com/jessieren/DeepVirFinder
