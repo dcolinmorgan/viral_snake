@@ -1,105 +1,105 @@
 onstart:
     # print("##### TEST #####\n") 
     # print("\t Creating jobs output subfolders...\n")
-    shell("mkdir -p results/assemble/")
+    shell("mkdir -p /groups/cgsd/dcmorgan/PRJNA544527/viral_results/assemble/")
 
-SAMPLES, = glob_wildcards("/groups/cgsd/dcmorgan/PRJNA544527/ftp/test/{sample}_1.fastq.gz")
+SAMPLES, = glob_wildcards("/groups/cgsd/dcmorgan/PRJNA544527/ftp/{sample}_1.fastq.gz")
 
 rule all:
     input:
-        expand("results/assemble/{sample}.fa", sample=SAMPLES, allow_missing=True),
+        expand("/groups/cgsd/dcmorgan/PRJNA544527/viral_results/assemble/{sample}.fa", sample=SAMPLES, allow_missing=True),
 
 
 rule run_assemble_and_mpa:
     input:
         # "{sample}"
-        A= "/groups/cgsd/dcmorgan/PRJNA544527/ftp/test/{sample}_1.fastq.gz",
-        B= "/groups/cgsd/dcmorgan/PRJNA544527/ftp/test/{sample}_2.fastq.gz"
+        A= "/groups/cgsd/dcmorgan/PRJNA544527/ftp/{sample}_1.fastq.gz",
+        B= "/groups/cgsd/dcmorgan/PRJNA544527/ftp/{sample}_2.fastq.gz"
 
     output:
-        A= protected("results/assemble/{sample}.fa"),
-        B= protected("results/m_out/{sample}.txt"),
-        C= temp("results/epi_metaphlan_out/{sample}.bowtie2.bz2"),
-        D= temp("results/epi_sam_out/{sample}.sam")
+        A= protected("/groups/cgsd/dcmorgan/PRJNA544527/viral_results/assemble/{sample}.fa"),
+        B= protected("/groups/cgsd/dcmorgan/PRJNA544527/viral_results/m_out/{sample}.txt"),
+        C= temp("/groups/cgsd/dcmorgan/PRJNA544527/viral_results/epi_metaphlan_out/{sample}.bowtie2.bz2"),
+        D= temp("/groups/cgsd/dcmorgan/PRJNA544527/viral_results/epi_sam_out/{sample}.sam")
 
     # params:
     #     rg=r"@RG\tID:{sample}\tSM:{sample}"
-    log: out = "logs/{sample}_stdout.log",
-         err = "logs/{sample}_stderr.err"
+    #log: out = "logs/1_{sample}_stdout.log",
+    #     err = "logs/1_{sample}_stderr.err"
 
     threads: 1
-    # singularity: "singularities/viral_NOdvf.sif"
-    conda: "/home/dcmorgan/.conda/envs/mypy3"
+    #singularity: "singularities/viral_calling.sif"
+    #conda: "/home/dcmorgan/.conda/envs/mypy3"
 
     shell:
-        """#!/bin/bash \n
+        """
         ml megahit \n
-        megahit -1 {input.A} -2 {input.B} -t {threads} -o {output.A}""" # && \
-        #"""metaphlan {input.A},{input.B} --bowtie2out {output.C} --nproc {threads} --input_type fastq -o {output.B} -t rel_ab_w_read_stats -s {output.D}"""
+        megahit -1 {input.A} -2 {input.B} -t {threads} -o {output.A} && \
+        metaphlan {input.A},{input.B} --bowtie2out {output.C} --nproc {threads} --input_type fastq -o {output.B} -t rel_ab_w_read_stats -s {output.D}"""
 
 
 rule run_dvf:
     input:
-        "results/assemble/{sample}.fa"
+        "/groups/cgsd/dcmorgan/PRJNA544527/viral_results/assemble/{sample}.fa"
     output:
-        protected("results/dvf_out/{sample}.txt")
-    log:
-        "logs/{sample}.log"
-    #singularity: "singularities/viral_YESdvf.sif"
-    conda: "/home/dcmorgan/.conda/envs/mypy3/envs/dvf"
+        protected("/groups/cgsd/dcmorgan/PRJNA544527/viral_results/dvf_out/{sample}.txt")
+    #log: out = "logs/2_{sample}_stdout.log",
+    #     err = "logs/2_{sample}_stderr.err"
+    singularity: "singularities/viral_calling.sif"
+    #conda: "/home/dcmorgan/.conda/envs/mypy3/envs/dvf"
     params:
         rg=r"@RG\tLEN:{500}"
     threads: 12
     shell:
-        "python results/DeepVirFinder/dvf.py -i {input} -l '{params.rg}' -c {threads}"
+        "python /groups/cgsd/dcmorgan/PRJNA544527/viral_results/DeepVirFinder/dvf.py -i {input} -l '{params.rg}' -c {threads}"
 
 
 
 rule run_prodigal:
     input:
-        "results/assemble/{sample}/final.contigs.fa_gt{params}bp_dvfpred.txt"
+        "/groups/cgsd/dcmorgan/PRJNA544527/viral_results/assemble/{sample}/final.contigs.fa_gt{params}bp_dvfpred.txt"
     output:
-        protected("results/assemble/{sample}/final_contigs.fna")
-    log:
-        "logs/{sample}.log"
+        protected("/groups/cgsd/dcmorgan/PRJNA544527/viral_results/assemble/{sample}/final_contigs.fna")
+    #log: out = "logs/3_{sample}_stdout.log",
+    #     err = "logs/3_{sample}_stderr.err"
     params:
         rg=r"@RG\tLEN:{500}"
-    # singularity: "singularities/viral_NOdvf.sif"
-    conda: "/home/dcmorgan/.conda/envs/mypy3"
+    singularity: "singularities/viral_calling.sif"
+    #conda: "/home/dcmorgan/.conda/envs/mypy3"
     script:
         "scripts/run_prodigal.py"
 
 
 rule run_blastp:
     input: 
-        A= "results/assemble/{sample}/final_contigs.fna",
+        A= "/groups/cgsd/dcmorgan/PRJNA544527/viral_results/assemble/{sample}/final_contigs.fna",
         B= "/groups/cgsd/dcmorgan/virusdb/refseq_viral_db"
     output:
-        protected("results/assemble/{sample}/viral_hits.blast")
-    log:
-        "logs/{sample}.log"
-    #singularity: "singularities/viral_NOdvf.sif"
-    conda: "/home/dcmorgan/.conda/envs/mypy3"
+        protected("/groups/cgsd/dcmorgan/PRJNA544527/viral_results/assemble/{sample}/viral_hits.blast")
+    #log: out = "logs/4_{sample}_stdout.log",
+    #     err = "logs/4_{sample}_stderr.err"
+    singularity: "singularities/viral_calling.sif"
+    #conda: "/home/dcmorgan/.conda/envs/mypy3"
     shell:
         "blastp -query {input.A} -db {input.B} -out {output} -outfmt 6"
   
 
 rule filter_blast:
     input:
-        "results/assemble/{sample}/final_contigs.fa"
+        "/groups/cgsd/dcmorgan/PRJNA544527/viral_results/assemble/{sample}/final_contigs.fa"
     output:
-        temp("results/assemble/{sample}/blast_contigs.fa")
-    log:
-        "logs/{sample}.log"
-    #singularity: "singularities/viral_NOdvf.sif"
-    conda: "/home/dcmorgan/.conda/envs/mypy3"
+        temp("/groups/cgsd/dcmorgan/PRJNA544527/viral_results/assemble/{sample}/blast_contigs.fa")
+    #log: out = "logs/5_{sample}_stdout.log",
+    #     err = "logs/5_{sample}_stderr.err"
+    singularity: "singularities/viral_calling.sif"
+    #conda: "/home/dcmorgan/.conda/envs/mypy3"
     script:
         "scripts/filter_blast.py"
 
 
 rule run_bbmap:
     input:
-        "results/assemble/{sample}/blast_contigs.fa"
+        "/groups/cgsd/dcmorgan/PRJNA544527/viral_results/assemble/{sample}/blast_contigs.fa"
     output:
         A= temp("assemble/{sample}/blast_contigs.faa"),
         B= temp("assemble/{sample}/build_v"),
@@ -107,8 +107,10 @@ rule run_bbmap:
         D= temp("assemble/{sample}/aln.bam"),
         E= temp("assemble/{sample}/sorted_aln.bam"),
         F= protected("temp(assemble/{sample}/idxstats.txt")
-    #singularity: "singularities/viral_calling.sif"
-    conda: "/home/dcmorgan/.conda/envs/mypy3"
+    singularity: "singularities/viral_calling.sif"
+    #conda: "/home/dcmorgan/.conda/envs/mypy3"
+    #log: out = "logs/6_{sample}_stdout.log",
+    #     err = "logs/6_{sample}_stderr.err"
     shell:
         "tr ',' '\n' < {input} > {output.A}"
         "bowtie2-build {output.A} {output.B}"
@@ -117,12 +119,23 @@ rule run_bbmap:
         "samtools sort {output.D} -o {output.E}"
         "samtools idxstats {output.E} > {output.F}"
 
+rule run_viral_recall:
+    input:
+        "/groups/cgsd/dcmorgan/PRJNA544527/viral_results/assemble/{sample}/blast_contigs.fa"
+    output:
+        "/groups/cgsd/dcmorgan/PRJNA544527/viral_results/assemble/{sample}/VR_out"
+    shell:
+        "
+        python scripts/viralrecall.py -i {input} -p {output} -b -t 12 -f -c -e 1e-8"
+
 rule get_count_table:
     input:
         "assemble/{sample}/idxstats.txt"
     output:
         protected("assemble/contig_counts.tsv")
     #conda: "/home/dcmorgan/.conda/envs/mypy3"
+    #log: out = "logs/7_{sample}_stdout.log",
+    #     err = "logs/7_{sample}_stderr.err"
     run:
         import pandas as pd
         R=glob.glob(input)
@@ -152,4 +165,4 @@ rule get_count_table:
     
 ### ml snakemake
 ### cd  
-### snakemake --profile profile/ --jobs 1
+### snakemake --profile profile/ --jobs 8

@@ -16,7 +16,7 @@ from: ubuntu
     bash Miniconda3-latest-Linux-x86_64.sh -b -f -p /miniconda3/
     rm Miniconda3-latest-Linux-x86_64.sh
     export PATH="/miniconda3/bin:$PATH"
-    conda create -n py_rest -c bioconda pandas megahit numpy prodigal bowtie  bbmap
+    conda create -n py_rest -c bioconda pandas megahit numpy prodigal bowtie bbmap hmmer
     
     ## attempt mamba native
     # curl micro.mamba.pm/install.sh | bash   
@@ -34,3 +34,8 @@ from: ubuntu
     
    pip3 install pandas MetaPhlan
    # git clone https://github.com/jessieren/DeepVirFinder
+
+    git clone https://github.com/faylward/viralrecall
+    cd viralrecall
+    wget -O hmm.tar.gz https://zenodo.org/record/4762520/files/hmm.tar.gz?download=1
+    tar -xvzf hmm.tar.gz
