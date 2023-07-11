@@ -2,8 +2,8 @@ bootstrap: library
 from: ubuntu
 
 %setup ## singularity build --fakeroot viral_calling.sif tryBuild.def
-   ## singularity build --fakeroot viral_B.sif tryBuild.def
-    mkdir $SINGULARITY_ROOTFS/test
+   ## singularity build --fakeroot viral_R.sif tryBuild.def
+    # mkdir $SINGULARITY_ROOTFS/test
 
 
 %post
@@ -26,14 +26,11 @@ from: ubuntu
     # /root/.local/bin/micromamba create -n py36_mamba -y -c conda-forge
     # /root/.local/bin/micromamba activate py36_mamba
     # /root/.local/bin/micromamba install -c bioconda python=3.6 numpy theano=1.0.3 keras=2.2.4 scikit-learn Biopython h5py megahit prodigal bowtie bbmap
-
-    NEJ
-    
-   # conda create --name dvf python=3.6 numpy theano=1.0.3 keras=2.2.4 scikit-learn Biopython h5py
+    # conda create --name dvf python=3.6 numpy theano=1.0.3 keras=2.2.4 scikit-learn Biopython h5py
     # source activate dvf
     
-   pip3 install pandas MetaPhlan
-   # git clone https://github.com/jessieren/DeepVirFinder
+    pip3 install pandas MetaPhlan
+    git clone https://github.com/jessieren/DeepVirFinder
 
     git clone https://github.com/faylward/viralrecall
     cd viralrecall
