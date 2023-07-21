@@ -31,21 +31,8 @@ IMPORTANT: singularity image gives user installed versions of required packages,
 <space>\
 <space>
   
-Time-Series analysis
+raw data processing, viral contigs identification, and viral taxonomy annotation
 ---------------------
-requirements :
-numpy==1.18.1
-pandas==1.0.1
-seaborn==0.10.0
-scipy==1.4.1
-```python
-   python *** -i outdirXX -o outdirXX/test
-
-```
-    
-Following this, [the jupyter notebook](https://github.com/dcolinmorgan/viral_snake/....) processes 
-    
-Among other things, these checks are performed herewithin:
 1. Assemble contigs with [megahit](https://github.com/voutcn/megahit)
     1. intput:
     2. output:
@@ -72,7 +59,22 @@ Among other things, these checks are performed herewithin:
     2. output:
 5. [plot abundance](https://github.com/dcolinmorgan/viral_snake/blob/master/scripts/plot_abundance.py)
 6. [Time series](...)
+   
+Time-Series analysis
+---------------------
+requirements :
+numpy==1.18.1
+pandas==1.0.1
+seaborn==0.10.0
+scipy==1.4.1
+```python
+   python *** -i outdirXX -o outdirXX/test
 
+```
+    
+Following this, [the jupyter notebook](https://github.com/dcolinmorgan/viral_snake/....) processes 
+    
+Among other things, these checks are performed herewithin:
 
 >Workflow figure from Nature Comms paper [previous manuscript](https://www.nature.com/articles/s41467-023-37975-y#Sec17)
 >--------------------------------------------------
