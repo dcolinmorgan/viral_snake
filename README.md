@@ -76,7 +76,7 @@ cudf cuml graphistry cu-cat seaborn
     nvidia-smi
 ```
     
-Following this [jupyter notebook]([https://github.com/dcolinmorgan/viral_snake/....](https://github.com/dcolinmorgan/grph/blob/main/accelearting_metagenomic_demo.ipynb)) for species abundance, umap, time-series analysis
+Following this [jupyter notebook](https://github.com/dcolinmorgan/grph/blob/main/accelearting_metagenomic_demo.ipynb) for species abundance, umap, time-series analysis
     
 Among other things, these checks are performed herewithin:
 
