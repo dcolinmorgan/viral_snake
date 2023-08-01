@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #PBS -l nodes=1:ppn=48
-#PBS -l mem=200g
+#PBS -l mem=500g
 #PBS -l walltime=1:00:00
 #PBS -N idxs
 #PBS -q cgsd 
@@ -14,5 +14,9 @@ module add miniconda3/4.12.0
 module add parallel
 source activate mypy3
 
-chmod +x snakemake_viral_calling/scripts/merge_idxstats.py
-python snakemake_viral_calling/scripts/merge_idxstats.py
+# chmod +x snakemake_viral_calling/scripts/merge_idxstats.py
+# python snakemake_viral_calling/scripts/merge_idxstats.py
+
+
+chmod +x snakemake_viral_calling/scripts/vir_top10.py
+python snakemake_viral_calling/scripts/vir_top10.py

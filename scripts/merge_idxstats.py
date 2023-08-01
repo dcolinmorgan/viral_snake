@@ -13,31 +13,31 @@ map1.drop(columns='ff').to_csv('~/MAP1.txt',sep='\t',index=False)
 
 ## based on cut -f1,2 /groups/cgsd/dcmorgan/CRC_data/no_duplicated/assemble/*/viral_hits.blast > ~/map_CRC.txt
 
-## based on cut -f1,2 /groups/cgsd/dcmorgan/PRJNA544527/V2_results/assemble/*/viral_hits.blast > ~/map2.txt
-map2=pd.read_csv('~/map2.txt',names=['contig','YP'],index_col=None,sep='\t')
+## based on cut -f1,2 /groups/cgsd/dcmorgan/CRC_data/no_duplicated/assemble/*/viral_hits.blast > ~/map2.txt
+map2=pd.read_csv('~/map_CRC.txt',names=['contig','YP'],index_col=None,sep='\t')
 MAP2=pd.merge(map1,map2)
-MAP2.to_csv('~/MAP2.txt',sep='\t')
-MAP2=pd.read_csv('~/MAP2.txt',sep='\t',index_col=None)#,nrows=10000)
+MAP2.to_csv('~/MAP2_crc.txt',sep='\t')
+# MAP2=pd.read_csv('~/MAP2_crc.txt',sep='\t',index_col=None)#,nrows=10000)
 # MAP2.contig=MAP2.contig.str.split('_').str[0]+'_'+MAP2.contig.str.split('_').str[1]
 del MAP2
 
-R=glob.glob('/groups/cgsd/dcmorgan/PRJNA544527/V2_results/assemble/*/idxstats.txt')
+R=glob.glob('/groups/cgsd/dcmorgan/CRC_data/no_duplicated/assemble/*/idxstats.txt')
 for i,j in enumerate(R):
     AA=pd.read_csv(j,sep='\t',index_col=0,header=None)
     BB=pd.DataFrame(AA[2]+AA[3])
     jeff=j.split('/')[7]#jeff=os.path.basename(j).split('.')[0]
     BB.rename(columns={0:jeff},inplace=True)
     if i==0:
-        CC=pd.DataFrame(BB)
+        idxstat=pd.DataFrame(BB)
     else:
-        CC=pd.merge(CC,BB,how='outer',left_index=True, right_index=True)
+        idxstat=pd.merge(idxstat,BB,how='outer',left_index=True, right_index=True)
 
-CC.to_csv('/groups/cgsd/dcmorgan/PRJNA544527/V2_results/merge_idxstats.txt',sep='\t',header=True,index=True)
+idxstat.to_csv('/groups/cgsd/dcmorgan/CRC_data/no_duplicated/merge_idxstats.txt',sep='\t',header=True,index=True)
 
-idxstat=pd.read_csv('/groups/cgsd/dcmorgan/PRJNA544527/V2_results/merge_idxstats.txt',header=0,index_col=0,sep='\t')
+# idxstat=pd.read_csv('/groups/cgsd/dcmorgan/CRC_data/no_duplicated/merge_idxstats.txt',header=0,index_col=0,sep='\t')
 
 idxstat=idxstat.rename_axis('contig').reset_index()#drop=True)
-
+q
 idxstat['sum']=idxstat.sum(axis=1,numeric_only = True)
 aa=idxstat.sort_values(by='sum').drop_duplicates(['contig'],keep='last')
 
@@ -46,26 +46,24 @@ aa=idxstat.sort_values(by='sum').drop_duplicates(['contig'],keep='last')
 
 def preprocess(x):
     idx_out=pd.merge(MAP2,aa)#, left_on = "Colname1", right_on = "Colname2")
-    if not os.path.exists('/groups/cgsd/dcmorgan/PRJNA544527/V2_results/annot_idx_table.txt') :
+    if not os.path.exists('/groups/cgsd/dcmorgan/CRC_data/no_duplicated/annot_idx_table.txt') :
 
-        idx_out.to_csv('/groups/cgsd/dcmorgan/PRJNA544527/V2_results/annot_idx_table.txt',sep='\t',index=True, header=True)
+        idx_out.to_csv('/groups/cgsd/dcmorgan/CRC_data/no_duplicated/annot_idx_table.txt',sep='\t',index=True, header=True)
     else:
-        idx_out.to_csv("/groups/cgsd/dcmorgan/PRJNA544527/V2_results/annot_idx_table.txt",mode="a",header=False,index=True,sep='\t')
+        idx_out.to_csv("/groups/cgsd/dcmorgan/CRC_data/no_duplicated/annot_idx_table.txt",mode="a",header=False,index=True,sep='\t')
 
-# reader = pd.read_csv("/groups/cgsd/dcmorgan/PRJNA544527/V2_results/annot_idx_table.txt", chunksize=1000) # chunksize depends with you colsize
-MAP2=pd.read_csv('~/MAP2.txt',sep='\t',index_col=None,nrows=1000000)
+# reader = pd.read_csv("/groups/cgsd/dcmorgan/CRC_data/no_duplicated/annot_idx_table.txt", chunksize=1000) # chunksize depends with you colsize
+MAP2=pd.read_csv('~/MAP2_crc.txt',sep='\t',index_col=None,nrows=1000000)
 MAP2.contig=MAP2.contig.str.split('_').str[0]+'_'+MAP2.contig.str.split('_').str[1]
 MAP2=MAP2.drop(columns=['ff','YP','Unnamed: 0'])
 
 [preprocess(r) for r in MAP2]
 
-# idx_out.to_csv('/groups/cgsd/dcmorgan/PRJNA544527/V2_results/new_idx_table.txt',sep='\t',index=True, header=True)
+# idx_out.to_csv('/groups/cgsd/dcmorgan/CRC_data/no_duplicated/new_idx_table.txt',sep='\t',index=True, header=True)
 
-# idx_out=pd.read_csv('/groups/cgsd/dcmorgan/PRJNA544527/V2_results/new_idx_table.txt',sep='\t',low_memory=False)
+# idx_out=pd.read_csv('/groups/cgsd/dcmorgan/CRC_data/no_duplicated/new_idx_table.txt',sep='\t',low_memory=False)
 
 
 # idx_out['sum']=idx_out.sum(axis=1,numeric_only = True)
 # aa=idx_out.sort_values(by='sum').drop_duplicates(['contig'],keep='last')
-# idx_out.drop(columns='sum').to_csv('/groups/cgsd/dcmorgan/PRJNA544527/V2_results/annot_idx_table.txt',sep='\t',index=True, header=True)
-
-
+# idx_out.drop(columns='sum').to_csv('/groups/cgsd/dcmorgan/CRC_data/no_duplicated/annot_idx_table.txt',sep='\t',index=True, header=True)
