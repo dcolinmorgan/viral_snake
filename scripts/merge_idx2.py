@@ -57,3 +57,15 @@ for i,j in enumerate(R):
     kk=jj[~jj.contig.duplicated(keep='first')]
     kk.drop(columns=['count','sum','yp_count']).to_csv("/groups/cgsd/dcmorgan/CRC_data/no_duplicated/annot/"+SS+"_idx_table2.txt",header=True,index=False,sep='\t')
 
+
+    
+    R=glob.glob('/groups/cgsd/dcmorgan/CRC_data/no_duplicated/annot/*idx_table2.txt')
+    for i,j in enumerate(R):
+        AA=pd.read_csv(j,sep='\t',index_col=None)
+        SS=j.split('annot')[1].split('_')[0].strip('/')
+        AA.columns=['contig','species',SS]
+        if i!=0:
+            BB=AA.merge(BB,on=['contig','species'],how='outer')#,left_on=['contig','species'])
+        else:
+            BB=AA
+    BB.fillna(0).to_csv('/groups/cgsd/dcmorgan/CRC_data/no_duplicated/annot_contigs.txt',sep='\t')
