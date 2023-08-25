@@ -3,7 +3,8 @@ import pandas as pd
 
 # # ## make proper annotations
 # # ## based on /groups/cgsd/dcmorgan/virusdb/viral.1.protein.faa
-map1=pd.read_csv('~/MAP1.txt',names=['YP','species'],index_col=None,sep='\t')
+map1=pd.read_csv('~/MAP1.txt',index_col=0,sep='\t')
+map1['YP']=map1['YP'].str.split(' ').str[0]
 
 os.chdir('/home/dcmorgan')
 
@@ -15,13 +16,13 @@ DS=['epilepsy/assemble/*/idxstats.txt',
 
 
 # R=glob.glob('epilepsy/assemble/*/idxstats.txt')
-R=glob.glob('/groups/cgsd/dcmorgan/PRJNA544527/V2_results/assemble/*/idxstats.txt')
-# R=glob.glob('/groups/cgsd/dcmorgan/CRC_data/no_duplicated/assemble/*/idxstats.txt')
+# R=glob.glob('/groups/cgsd/dcmorgan/PRJNA544527/V2_results/assemble/*/idxstats.txt')
+R=glob.glob('/groups/cgsd/dcmorgan/CRC_data/no_duplicated/assemble/*/idxstats.txt')
 
 for i,j in enumerate(R):
     AA=pd.read_csv(j,sep='\t',index_col=0,header=None)
-    BB=pd.DataFrame(AA[2]+AA[3])
-    jeff=j.split('/')[2] # [7] for other projects
+    BB=pd.DataFrame(AA[2]*1000*1000000/(AA[1]*1000000))
+    jeff=j.split('/')[7] # [7] for other projects
     BB.rename(columns={0:jeff},inplace=True)
 
     idxstat=BB
@@ -61,10 +62,10 @@ for i,j in enumerate(R):
 
     # jj['sum']=jj.drop(columns=['count']).sum(axis=1)
     # kk=jj[~jj.contig.duplicated(keep='first')]
-    # kk.drop(columns=['count','evalue']).to_csv("~/epilepsy/annot/"+SS+"_idx_table_M.txt",header=True,index=False,sep='\t')
+    # kk.drop(columns=['count','evalue']).to_csv("~/epilepsy/annot/"+SS+"_idx_table_M3.txt",header=True,index=False,sep='\t')
     
-    kk.drop(columns=['count','evalue']).to_csv("/groups/cgsd/dcmorgan/PRJNA544527/V2_results/annot/"+SS+"_idx_table_M.txt",header=True,index=False,sep='\t')
-    # kk.drop(columns=['count','evalue']).to_csv("/groups/cgsd/dcmorgan/CRC_data/no_duplicated/annot/"+SS+"_idx_table_M.txt",header=True,index=False,sep='\t')
+    # kk.drop(columns=['count','evalue']).to_csv("/groups/cgsd/dcmorgan/PRJNA544527/V2_results/annot/"+SS+"_idx_table_M3.txt",header=True,index=False,sep='\t')
+    kk.drop(columns=['count','evalue']).to_csv("/groups/cgsd/dcmorgan/CRC_data/no_duplicated/annot/"+SS+"_idx_table_M3.txt",header=True,index=False,sep='\t')
     del kk, jj, idx
     
     jj=idx_out.groupby(['contig','species']).sum()
@@ -77,14 +78,14 @@ for i,j in enumerate(R):
     idx=jj.groupby(['contig'])['evalue'].transform(min) == jj['evalue']
     kk=jj[idx]
     
-    # kk.drop(columns=['count','evalue']).to_csv("~/epilepsy/annot/"+SS+"_idx_table_S.txt",header=True,index=False,sep='\t')
+    # kk.drop(columns=['count','evalue']).to_csv("~/epilepsy/annot/"+SS+"_idx_table_S3.txt",header=True,index=False,sep='\t')
     
-    kk.drop(columns=['count','evalue']).to_csv("/groups/cgsd/dcmorgan/PRJNA544527/V2_results/annot/"+SS+"_idx_table_S.txt",header=True,index=False,sep='\t')
-    # kk.drop(columns=['count','evalue']).to_csv("/groups/cgsd/dcmorgan/CRC_data/no_duplicated/annot/"+SS+"_idx_table_S.txt",header=True,index=False,sep='\t')
+    # kk.drop(columns=['count','evalue']).to_csv("/groups/cgsd/dcmorgan/PRJNA544527/V2_results/annot/"+SS+"_idx_table_S3.txt",header=True,index=False,sep='\t')
+    kk.drop(columns=['count','evalue']).to_csv("/groups/cgsd/dcmorgan/CRC_data/no_duplicated/annot/"+SS+"_idx_table_S3.txt",header=True,index=False,sep='\t')
 
-# R=glob.glob('epilepsy/annot/*idx_table_M.txt')
-R=glob.glob('/groups/cgsd/dcmorgan/PRJNA544527/V2_results/annot/*_idx_table_M.txt')
-# R=glob.glob('/groups/cgsd/dcmorgan/CRC_data/no_duplicated/annot/*idx_table_M.txt')
+# R=glob.glob('epilepsy/annot/*idx_table_M3.txt')
+# R=glob.glob('/groups/cgsd/dcmorgan/PRJNA544527/V2_results/annot/*_idx_table_M3.txt')
+R=glob.glob('/groups/cgsd/dcmorgan/CRC_data/no_duplicated/annot/*idx_table_M3.txt')
 
 for i,j in enumerate(R):
     AA=pd.read_csv(j,sep='\t',index_col=None)
@@ -94,13 +95,13 @@ for i,j in enumerate(R):
         BB=AA.merge(BB,on=['contig','species'],how='outer')#,left_on=['contig','species'])
     else:
         BB=AA
-# BB.fillna(0).to_csv('epilepsy/annot_contigs_M.txt',sep='\t')
-BB.fillna(0).to_csv('/groups/cgsd/dcmorgan/PRJNA544527/V2_results/annot_contigs_M.txt',sep='\t')
-# BB.fillna(0).to_csv('/groups/cgsd/dcmorgan/CRC_data/no_duplicated/annot_contigs_M.txt',sep='\t')
+# BB.fillna(0).to_csv('epilepsy/annot_contigs_M3.txt',sep='\t')
+# BB.fillna(0).to_csv('/groups/cgsd/dcmorgan/PRJNA544527/V2_results/annot_contigs_M3.txt',sep='\t')
+BB.fillna(0).to_csv('/groups/cgsd/dcmorgan/CRC_data/no_duplicated/annot_contigs_M3.txt',sep='\t')
 
-# R=glob.glob('epilepsy/annot/*idx_table_S.txt')
-R=glob.glob('/groups/cgsd/dcmorgan/PRJNA544527/V2_results/annot/*_idx_table_M.txt')
-# R=glob.glob('/groups/cgsd/dcmorgan/CRC_data/no_duplicated/annot/*idx_table_M.txt')
+# R=glob.glob('epilepsy/annot/*idx_table_S3.txt')
+# R=glob.glob('/groups/cgsd/dcmorgan/PRJNA544527/V2_results/annot/*_idx_table_S.txt')
+R=glob.glob('/groups/cgsd/dcmorgan/CRC_data/no_duplicated/annot/*idx_table_S3.txt')
 for i,j in enumerate(R):
     AA=pd.read_csv(j,sep='\t',index_col=None)
     SS=j.split('annot')[1].split('_')[0].strip('/')
@@ -109,13 +110,15 @@ for i,j in enumerate(R):
         BB=AA.merge(BB,on=['contig','species'],how='outer')#,left_on=['contig','species'])
     else:
         BB=AA
-# BB.fillna(0).to_csv('epilepsy/annot_contigs_S.txt',sep='\t')
-BB.fillna(0).to_csv('/groups/cgsd/dcmorgan/PRJNA544527/V2_results/annot_contigs_M.txt',sep='\t')
-# BB.fillna(0).to_csv('/groups/cgsd/dcmorgan/CRC_data/no_duplicated/annot_contigs_M.txt',sep='\t')
+# BB.fillna(0).to_csv('epilepsy/annot_contigs_S3.txt',sep='\t')
+# BB.fillna(0).to_csv('/groups/cgsd/dcmorgan/PRJNA544527/V2_results/annot_contigs_S.txt',sep='\t')
+BB.fillna(0).to_csv('/groups/cgsd/dcmorgan/CRC_data/no_duplicated/annot_contigs_S3.txt',sep='\t')
 
 
-# data=pd.read_csv('epilepsy/annot_contigs.txt',sep='\t')
+
+# data=pd.read_csv('~/epilepsy/annot_contigs_M.txt',sep='\t',index_col=0)
 # # data=pd.read_csv('contig_counts.tsv',sep='\t')
+# data.species=data.species.str.strip(']')
 # data=data.melt(['species','contig']).replace({'-DNA':' '}, regex=True)
 # data.variable.replace(' ','',regex=True,inplace=True)
 # label=pd.read_csv('epilepsy/assemble/label.txt',sep='\t')
@@ -123,11 +126,11 @@ BB.fillna(0).to_csv('/groups/cgsd/dcmorgan/PRJNA544527/V2_results/annot_contigs_
 # data.rename(columns={'value':'abundance'},inplace=True)
 
 # data1=data[data.label=='Non-refractory']
-# sub_gen=data1.groupby('species').count().sort_values('contig',ascending=False).reset_index().species[1:20]
+# sub_gen=data1.groupby('species').sum().sort_values('abundance',ascending=False).reset_index().species[1:20]
 # data1=data1[data1['species'].isin(sub_gen)]
 
 # data2=data[data.label=='Refractory']
-# sub_gen=data2.groupby('species').count().sort_values('contig',ascending=False).reset_index().species[1:20]
+# sub_gen=data2.groupby('species').sum().sort_values('abundance',ascending=False).reset_index().species[1:20]
 # data2=data2[data2['species'].isin(sub_gen)]
 
 # plt.figure(figsize=(12,8))
