@@ -18,8 +18,13 @@ source activate mypy3
 # chmod +x snakemake_viral_calling/scripts/merge_idxstats.py
 # python snakemake_viral_calling/scripts/merge_idxstats.py
 
-chmod +x snakemake_viral_calling/scripts/merge_idx3.py
-python snakemake_viral_calling/scripts/merge_idx3.py
+# chmod +x snakemake_viral_calling/scripts/merge_idx3.py
+# python snakemake_viral_calling/scripts/merge_idx3.py
 
 # chmod +x snakemake_viral_calling/scripts/vir_top10.py
 # python snakemake_viral_calling/scripts/vir_top10.py
+
+
+chmod +x snakemake_viral_calling/scripts/sumctg2ref.py
+
+python snakemake_viral_calling/scripts/sumctg2ref.py

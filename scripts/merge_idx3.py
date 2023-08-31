@@ -9,11 +9,12 @@ DS=['epilepsy/assemble/*/idxstats.txt',
     '/groups/cgsd/dcmorgan/HT/*/idxstats.txt'
    ]
 
+from sumctg2ref import checktax,readtax,readnorf,compare,sumtab
 
-map1=pd.read_csv('~/long.species',sep='\t',header=None)
-map1[0]=map1[0].str.split('#').str[0]
-# map1.groupby('contig').count()
-map1.rename(columns={0:'contig',1:'species'},inplace=True)
+# map1=pd.read_csv('~/long.species',sep='\t',header=None)
+# map1[0]=map1[0].str.split('#').str[0]
+# # map1.groupby('contig').count()
+# map1.rename(columns={0:'contig',1:'species'},inplace=True)
 # map1.to_csv('~/contig2spec.txt',sep='\t')
 
 
@@ -22,6 +23,10 @@ map1.rename(columns={0:'contig',1:'species'},inplace=True)
 R=glob.glob('/groups/cgsd/dcmorgan/CRC_data/no_duplicated/assemble/*/idxstats.txt')
 
 for i,j in enumerate(R):
+    sumtab(i)
+    map1=pd.read_csv('/groups/cgsd/dcmorgan/CRC_data/no_duplicated/assemble/'+kk+'/ctg_spc.txt',sep='\t',columms=['contig','species'],index_col=0)
+
+    
     kk=j.split('/')[7]
     # AA=pd.read_csv('epilepsy/assemble/'+kk+'/idxstats.txt',sep='\t',header=None,index_col=0)
     # AA=pd.read_csv('/groups/cgsd/dcmorgan/PRJNA544527/V2_results/assemble/'+kk+'/idxstats.txt',sep='\t',header=None,index_col=0)

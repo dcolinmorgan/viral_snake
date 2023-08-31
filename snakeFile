@@ -124,7 +124,8 @@ rule run_pre_VR:
         "/groups/cgsd/dcmorgan/PRJNA544527/viral_results/assemble/{sample}/blast_contigs.fa"
     output:
         "/groups/cgsd/dcmorgan/PRJNA544527/viral_results/cat_blast_contigs.faa"
-    singularity: "singularities/viral_R.sif"
+    #singularity: "singularities/viral_R.sif"
+    #conda: "/home/dcmorgan/.conda/envs/mypy3"
     run:
         import glob,os
         import pandas as pd
@@ -156,27 +157,27 @@ rule run_move_idx:
         for subdir in *; do cp $subdir/idxstats.txt $subdir.idxstats.txt; done; && \
         """
         
-rule get_count_table:
-    input:
-        "/groups/cgsd/dcmorgan/PRJNA544527/viral_results/assemble//{sample}/idxstats.txt"
-    output:
-        protected("/groups/cgsd/dcmorgan/PRJNA544527/viral_results/assemble//contig_counts.tsv")
-    #conda: "/home/dcmorgan/.conda/envs/mypy3"
-    log: out = "/groups/cgsd/dcmorgan/PRJNA544527/viral_results/logs/7_{sample}_stdout.log",
-         err = "/groups/cgsd/dcmorgan/PRJNA544527/viral_results/logs/7_{sample}_stderr.err"
-    run:
-        import pandas as pd
-        R=glob.glob(input)
-        for i,j in enumerate(R):
-            AA=pd.read_csv(j,sep='\t',index_col=0,header=None)
-            BB=pd.DataFrame(AA[2]+AA[3])
-            jeff=os.path.basename(j).split('.')[0]
-            BB.rename(columns={'0':jeff})
-            if i==0:
-                CC=pd.DataFrame(BB)
-            else:
-                CC=pd.merge(CC,BB,how='outer',left_index=True, right_index=True)
-        CC.to_csv(output,sep='\t')
+# rule get_count_table:
+#    input:
+#        "/groups/cgsd/dcmorgan/PRJNA544527/viral_results/assemble//{sample}/idxstats.txt"
+#    output:
+#        protected("/groups/cgsd/dcmorgan/PRJNA544527/viral_results/assemble//contig_counts.tsv")
+#    #conda: "/home/dcmorgan/.conda/envs/mypy3"
+#    log: out = "/groups/cgsd/dcmorgan/PRJNA544527/viral_results/logs/7_{sample}_stdout.log",
+#         err = "/groups/cgsd/dcmorgan/PRJNA544527/viral_results/logs/7_{sample}_stderr.err"
+#    run:
+#       import pandas as pd
+#        R=glob.glob(input)
+#        for i,j in enumerate(R):
+#            AA=pd.read_csv(j,sep='\t',index_col=0,header=None)
+#            BB=pd.DataFrame(AA[2]+AA[3])
+#            jeff=os.path.basename(j).split('.')[0]
+#            BB.rename(columns={'0':jeff})
+#            if i==0:
+#                CC=pd.DataFrame(BB)
+#            else:
+#                CC=pd.merge(CC,BB,how='outer',left_index=True, right_index=True)
+#        CC.to_csv(output,sep='\t')
 
 # rule plot_abundance:
 #     input:
